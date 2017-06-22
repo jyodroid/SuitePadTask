@@ -1,60 +1,55 @@
 package de.suitepad.jyodroid.datasourceapp.model;
 
-import android.support.annotation.StringDef;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
 /**
  * Created by johntangarife on 6/20/17.
  */
 
 public final class MenuItem {
 
-    @StringDef({TYPE_APPETIZER, TYPE_MAIN, TYPE_DRINK})
+//    @StringDef({TYPE_APPETIZER, TYPE_MAIN, TYPE_DRINK})
+//
+//    @Retention(RetentionPolicy.SOURCE)
+//    public @interface MenuItemType {
+//    }
+//
+//    public static final String TYPE_APPETIZER = "appetizer";
+//    public static final String TYPE_MAIN = "main course";
+//    public static final String TYPE_DRINK = "drink";
 
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface MenuItemType {
+    private String id;
+    private String name;
+    private Double price;
+    private String type;
+
+    public String getId() {
+        return id;
     }
 
-    public static final String TYPE_APPETIZER = "appetizer";
-    public static final String TYPE_MAIN = "main course";
-    public static final String TYPE_DRINK = "drink";
-
-    private String itemId;
-    private String itemName;
-    private Double itemPrice;
-    private MenuItemType Type;
-
-    public String getItemId() {
-        return itemId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setItemId(String itemId) {
-        this.itemId = itemId;
+    public String getName() {
+        return name;
     }
 
-    public String getItemName() {
-        return itemName;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public void setItemName(String itemName) {
-        this.itemName = itemName;
+    public Double getPrice() {
+        return price;
     }
 
-    public Double getItemPrice() {
-        return itemPrice;
+    public void setPrice(Double price) {
+        this.price = price;
     }
 
-    public void setItemPrice(Double itemPrice) {
-        this.itemPrice = itemPrice;
+    public String getType() {
+        return type;
     }
 
-    public MenuItemType getType() {
-        return Type;
-    }
-
-    public void setType(MenuItemType type) {
-        Type = type;
+    public void setType(String type) {
+        this.type = type;
     }
 }
