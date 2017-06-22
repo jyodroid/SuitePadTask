@@ -6,16 +6,6 @@ package de.suitepad.jyodroid.datasourceapp.model;
 
 public final class MenuItem {
 
-//    @StringDef({TYPE_APPETIZER, TYPE_MAIN, TYPE_DRINK})
-//
-//    @Retention(RetentionPolicy.SOURCE)
-//    public @interface MenuItemType {
-//    }
-//
-//    public static final String TYPE_APPETIZER = "appetizer";
-//    public static final String TYPE_MAIN = "main course";
-//    public static final String TYPE_DRINK = "drink";
-
     private String id;
     private String name;
     private Double price;

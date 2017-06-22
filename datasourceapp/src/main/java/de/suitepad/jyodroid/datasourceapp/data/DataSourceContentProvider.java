@@ -108,10 +108,10 @@ public final class DataSourceContentProvider extends ContentProvider {
     }
 
     /**
-     * @param uri
-     * @param projection
-     * @param sortOrder
-     * @return
+     * @param uri        original uri
+     * @param projection of elements in table to be returned on {@link Cursor}
+     * @param sortOrder  order in the elements in table to be returned on {@link Cursor}
+     * @return query result
      */
     private Cursor getItemById(Uri uri, String[] projection, String sortOrder) {
 

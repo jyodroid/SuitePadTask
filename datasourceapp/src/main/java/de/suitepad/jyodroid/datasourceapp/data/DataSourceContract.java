@@ -1,7 +1,6 @@
 package de.suitepad.jyodroid.datasourceapp.data;
 
 import android.content.ContentResolver;
-import android.content.ContentUris;
 import android.net.Uri;
 import android.provider.BaseColumns;
 

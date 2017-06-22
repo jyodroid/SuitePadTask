@@ -33,8 +33,10 @@ public final class DataSourceDBHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        final String SQL_CREATE_MENU_ITEMS_TABLE = "CREATE TABLE " + MenuItemEntry.TABLE_NAME + " (" +
-                MenuItemEntry.COLUMN_ID + " TEXT PRIMARY KEY," +
+
+        final String SQL_CREATE_MENU_ITEMS_TABLE = "CREATE TABLE " + MenuItemEntry.TABLE_NAME +
+                " (" +
+                MenuItemEntry.COLUMN_ID + " TEXT PRIMARY KEY, " +
                 MenuItemEntry.COLUMN_NAME + " TEXT NOT NULL, " +
                 MenuItemEntry.COLUMN_PRICE + " REAL NOT NULL, " +
                 MenuItemEntry.COLUMN_TYPE + " TEXT NOT NULL" +
@@ -59,28 +61,26 @@ public final class DataSourceDBHelper extends SQLiteOpenHelper {
     /**
      * Insert default values from Json
      *
-     * @param defaultJsonName name of file where is the default data
-     * @param mContext        app context
+     * @param tableName name of the table where is intended to do the insertion
+     * @param jsonName  name of file where is the default data
+     * @param mContext  app context
+     * @param db        SQL database where is table #tableName
      */
-    private void insertDefaultValues(String tableName, String defaultJsonName,
+
+    private void insertDefaultValues(String tableName, String jsonName,
                                      Context mContext, SQLiteDatabase db) {
-        List<MenuItem> defaultItems = getItemsFromJSON(defaultJsonName, mContext);
+        List<MenuItem> defaultItems = getItemsFromJSON(jsonName, mContext);
 
-        StringBuilder queryFormatBuilder = new StringBuilder();
-        queryFormatBuilder
-                .append("INSERT INTO ")
-                .append(tableName)
-                .append(" VALUES ( \"%1$s\", \"%2$s\", %3$f, \"%4$s\")");
+        final String SQL_INSERT_MENU_ITEMS_FORMAT =
+                "INSERT INTO " + tableName + " VALUES ( \"%1$s\", \"%2$s\", %3$f, \"%4$s\")";
 
-        if (defaultItems != null) {
-            for (MenuItem item : defaultItems) {
+        if (defaultItems != null) for (MenuItem item : defaultItems) {
 
-                String insertQuery =
-                        String.format(queryFormatBuilder.toString(), item.getId(),
-                                item.getName(), item.getPrice(), item.getType());
+            String insertQuery =
+                    String.format(SQL_INSERT_MENU_ITEMS_FORMAT, item.getId(),
+                            item.getName(), item.getPrice(), item.getType());
 
-                db.execSQL(insertQuery);
-            }
+            db.execSQL(insertQuery);
         }
     }
 
