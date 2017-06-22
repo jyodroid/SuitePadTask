@@ -3,6 +3,7 @@ package de.suitepad.jyodroid.datasourceapp.data;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -23,6 +24,7 @@ public final class DataSourceDBHelper extends SQLiteOpenHelper {
     private static final int DATABASE_VERSION = 1;
     private static final String DATABASE_NAME = "DataSourceApp.db";
     private static final String DEFAULT_JSON_NAME = "initial_data.json";
+    private static final String LOG_TAG = DataSourceDBHelper.class.getSimpleName();
 
     private Context mContext;
 
@@ -110,7 +112,7 @@ public final class DataSourceDBHelper extends SQLiteOpenHelper {
 
 
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(LOG_TAG, "Error parsing JSON ", e);
             return null;
         }
     }
