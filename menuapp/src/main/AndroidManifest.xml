@@ -14,7 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".MenuActivity"
+            android:name=".menu.MenuActivity"
             android:launchMode="singleTop">
             <intent-filter>
                 <category android:name="android.intent.category.LAUNCHER" />

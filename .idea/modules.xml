@@ -3,12 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/SuitePadTask.iml" filepath="$PROJECT_DIR$/SuitePadTask.iml" />
-      <module fileurl="file://$PROJECT_DIR$/SuitePadTask.iml" filepath="$PROJECT_DIR$/SuitePadTask.iml" />
-      <module fileurl="file://$PROJECT_DIR$/datasourceapp/datasourceapp.iml" filepath="$PROJECT_DIR$/datasourceapp/datasourceapp.iml" />
       <module fileurl="file://$PROJECT_DIR$/datasourceapp/datasourceapp.iml" filepath="$PROJECT_DIR$/datasourceapp/datasourceapp.iml" />
       <module fileurl="file://$PROJECT_DIR$/httpproxyapp/httpproxyapp.iml" filepath="$PROJECT_DIR$/httpproxyapp/httpproxyapp.iml" />
-      <module fileurl="file://$PROJECT_DIR$/httpproxyapp/httpproxyapp.iml" filepath="$PROJECT_DIR$/httpproxyapp/httpproxyapp.iml" />
-      <module fileurl="file://$PROJECT_DIR$/menuapp/menuapp.iml" filepath="$PROJECT_DIR$/menuapp/menuapp.iml" />
       <module fileurl="file://$PROJECT_DIR$/menuapp/menuapp.iml" filepath="$PROJECT_DIR$/menuapp/menuapp.iml" />
     </modules>
   </component>

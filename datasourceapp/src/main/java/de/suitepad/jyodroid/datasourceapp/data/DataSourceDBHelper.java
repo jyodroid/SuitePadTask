@@ -23,7 +23,7 @@ public final class DataSourceDBHelper extends SQLiteOpenHelper {
 
     private static final int DATABASE_VERSION = 1;
     private static final String DATABASE_NAME = "DataSourceApp.db";
-    private static final String DEFAULT_JSON_NAME = "initial_data.json";
+    private static final String DEFAULT_JSON_NAME = "sample.json";
     private static final String LOG_TAG = DataSourceDBHelper.class.getSimpleName();
 
     private Context mContext;

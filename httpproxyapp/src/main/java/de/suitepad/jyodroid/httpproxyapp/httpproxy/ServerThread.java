@@ -23,6 +23,8 @@ public class ServerThread extends Thread {
     private Socket socket = null;
     private static final int BUFFER_SIZE = 32768;
 
+    private String sourceUrl = "https://gist.githubusercontent.com/Rio517/5c95cc6402da8c5e37bc579111e14350/raw/b8ac727658a2aae2a4338d1cb7b1e91aca6288db/z_output.json";
+
     public ServerThread(Socket socket) {
         super("ProxyThread");
         this.socket = socket;
@@ -108,7 +110,7 @@ public class ServerThread extends Thread {
 
                 ///////////////////////////////////
                 //begin send response to client
-                File testFile = new File("/Users/jyodroid/Documents/SuitePadTask/menuapp/src/main/assets/initial_data.json");
+                File testFile = new File("/Users/johntangarife/Documents/StudioProjects/SuitePadTask/datasourceapp/src/main/assets/sample.json");
 
                 out.writeBytes("HTTP/1.1 200 OK\n");
                 out.writeBytes("Content-Type: text/json\n");
