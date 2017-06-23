@@ -1,13 +1,12 @@
 package de.suitepad.jyodroid.httpproxyapp.httpproxy;
 
-import android.util.Log;
-
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
@@ -21,95 +20,137 @@ import java.util.StringTokenizer;
 //TODO: Use safe thread model for android.
 //TODO: try to use dependency injection on mSocket
 public class ServerThread extends Thread {
-
-    private static final String LOG_TAG = ServerThread.class.getSimpleName();
-    private final int BUFFER_SIZE = 32768;
-    private Socket mSocket;
+    private Socket socket = null;
+    private static final int BUFFER_SIZE = 32768;
 
     public ServerThread(Socket socket) {
-        super(ServerThread.class.getSimpleName());
-        this.mSocket = socket;
+        super("ProxyThread");
+        this.socket = socket;
     }
 
     public void run() {
+        //get input from user
+        //send request to server
+        //get response from server
+        //send response to user
 
-        BufferedReader bufferedReader = null;
-        DataOutputStream outputStream = null;
-        BufferedReader inputStream = null;
         try {
-
-            outputStream = new DataOutputStream(mSocket.getOutputStream());
-            inputStream =
-                    new BufferedReader(new InputStreamReader(mSocket.getInputStream()));
+            DataOutputStream out =
+                    new DataOutputStream(socket.getOutputStream());
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream()));
 
             String inputLine, outputLine;
-            int counter = 0;
-            String urlToCall = null;
-
-            //Get request from client
-            while ((inputLine = inputStream.readLine()) != null) {
-                StringTokenizer tokenizer = new StringTokenizer(inputLine);
-                tokenizer.nextToken();
-
-                if (counter == 0) {
+            int cnt = 0;
+            String urlToCall = "";
+            ///////////////////////////////////
+            //begin get request from client
+            while ((inputLine = in.readLine()) != null) {
+                try {
+                    StringTokenizer tok = new StringTokenizer(inputLine);
+                    tok.nextToken();
+                } catch (Exception e) {
+                    break;
+                }
+                //parse the first line of the request to find the url
+                if (cnt == 0) {
                     String[] tokens = inputLine.split(" ");
                     urlToCall = tokens[1];
-                    Log.d(LOG_TAG, "Url to be called " + urlToCall);
+                    //can redirect this to output log
+                    System.out.println("Request for : " + urlToCall);
                 }
-                counter++;
+
+                cnt++;
             }
-
-            // Resend request to real server
-            // TODO: try to use Retrofit
-            URL url = new URL(urlToCall);
-            URLConnection urlConnection = url.openConnection();
-            urlConnection.setDoInput(true);
-            urlConnection.setDoOutput(false);
-
-            //Receive response
-            InputStream responseInputStream = null;
-            HttpURLConnection connection = (HttpURLConnection) urlConnection;
-            if (urlConnection.getContentLength() > 0) {
-                responseInputStream = urlConnection.getInputStream();
-                bufferedReader = new BufferedReader(new InputStreamReader(responseInputStream));
-            }
-
-            //Return response
-            byte[] clientResponse = new byte[BUFFER_SIZE];
-            int index = responseInputStream.read(clientResponse, 0, BUFFER_SIZE);
-
-            while (index != -1) {
-                outputStream.write(clientResponse, 0, BUFFER_SIZE);
-            }
-            outputStream.flush();
+            //end get request from client
+            ///////////////////////////////////
 
 
-        } catch (IOException ioe) {
-            Log.e(LOG_TAG, "Error retrieving data from socket", ioe);
-        } catch (NullPointerException npe) {
-            Log.e(LOG_TAG, "Some operation with null", npe);
-        } finally {
+            BufferedReader rd = null;
             try {
-                if (mSocket != null) {
-                    mSocket.close();
+                //System.out.println("sending request
+                //to real server for url: "
+                //        + urlToCall);
+                ///////////////////////////////////
+                //begin send request to server, get response from server
+                URL url = new URL(urlToCall);
+                URLConnection conn = url.openConnection();
+                conn.setDoInput(true);
+                //not doing HTTP posts
+                conn.setDoOutput(false);
+                //System.out.println("Type is: "
+                //+ conn.getContentType());
+                //System.out.println("content length: "
+                //+ conn.getContentLength());
+                //System.out.println("allowed user interaction: "
+                //+ conn.getAllowUserInteraction());
+                //System.out.println("content encoding: "
+                //+ conn.getContentEncoding());
+                //System.out.println("content type: "
+                //+ conn.getContentType());
+
+                // Get the response
+                InputStream is = null;
+
+//                HttpURLConnection huc = (HttpURLConnection)conn;
+                if (conn.getContentLength() > 0) {
+                    try {
+                        is = conn.getInputStream();
+                        rd = new BufferedReader(new InputStreamReader(is));
+                    } catch (IOException ioe) {
+                        System.out.println(
+                                "********* IO EXCEPTION **********: " + ioe);
+                    }
                 }
 
-                if (bufferedReader != null) {
-                    bufferedReader.close();
-                }
+                //end send request to server, get response from server
+                ///////////////////////////////////
 
-                if (inputStream != null) {
-                    inputStream.close();
-                }
+                ///////////////////////////////////
+                //begin send response to client
+                File testFile = new File("/Users/jyodroid/Documents/SuitePadTask/menuapp/src/main/assets/initial_data.json");
 
-                if (outputStream != null) {
-                    outputStream.close();
+                out.writeBytes("HTTP/1.1 200 OK\n");
+                out.writeBytes("Content-Type: text/json\n");
+                out.writeBytes("Content-Length: " + testFile.length() + "\n\n");
+
+                is = new FileInputStream(testFile);
+                byte by[] = new byte[BUFFER_SIZE];
+                int index = is.read(by, 0, BUFFER_SIZE);
+
+                while (index != -1) {
+                    out.write(by, 0, index);
+                    index = is.read(by, 0, BUFFER_SIZE);
                 }
-            } catch (IOException ioe) {
-                Log.e(LOG_TAG, "Error retrieving data from socket", ioe);
+                out.flush();
+
+                //end send response to client
+                ///////////////////////////////////
+            } catch (Exception e) {
+                //can redirect this to error log
+                System.err.println("Encountered exception: " + e);
+                e.printStackTrace();
+                //encountered error - just send nothing back, so
+                //processing can continue
+                out.writeBytes("");
             }
+
+            //close out all resources
+            if (rd != null) {
+                rd.close();
+            }
+            if (out != null) {
+                out.close();
+            }
+            if (in != null) {
+                in.close();
+            }
+            if (socket != null) {
+                socket.close();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
-
-
 }

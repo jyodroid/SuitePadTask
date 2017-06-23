@@ -18,13 +18,17 @@ public class Server {
             ServerSocket serverSocket = new ServerSocket(portNumber);
 //            Log.d(LOG_TAG, "Server started on port: " + portNumber);
             System.out.println(LOG_TAG + "Server started on port: " + portNumber);
-            new ServerThread(serverSocket.accept()).start();
+            while (true) {
+                new ServerThread(serverSocket.accept()).start();
+            }
+
 
             //On finished??
-            serverSocket.close();
+//            serverSocket.close();
         } catch (IOException e) {
 //            Log.e(LOG_TAG, "Error creating socket on port " + portNumber, e);
             System.out.println(LOG_TAG + "Error creating socket on port " + portNumber);
+            System.exit(-1);
         }
     }
 

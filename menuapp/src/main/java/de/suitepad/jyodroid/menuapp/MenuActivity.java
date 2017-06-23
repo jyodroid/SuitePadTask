@@ -15,22 +15,24 @@ import android.webkit.WebViewClient;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import okhttp3.Headers;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class MenuActivity extends AppCompatActivity {
 
     private ViewHolder mViewHolder;
+    private final OkHttpClient client = new OkHttpClient();
 
     @BindView(R.id.menu_root_view)
     View mRootView;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,31 +40,14 @@ public class MenuActivity extends AppCompatActivity {
         setContentView(R.layout.activity_menu);
         ButterKnife.bind(this);
 
-//        HttpHost proxy = new HttpHost("someproxy", 8080);
+        mViewHolder = new ViewHolder(mRootView);
 
-//        setKitKatWebViewProxy(this, getIPAddress(true), 12340);
-
-        ViewHolder mViewHolder = new ViewHolder(mRootView);
-
+        System.setProperty("http.proxyHost", "192.168.0.15");
+        System.setProperty("http.proxyPort", "12340");
+//        System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
 
         mViewHolder.mainWebView.setWebViewClient(new myWebClient());
-
-
-        // Simplest usage: note that an exception will NOT be thrown
-        // if there is an error loading this page (see below).
-//        mViewHolder.mainWebView.loadUrl("https://google.com/");
         mViewHolder.mainWebView.loadUrl("file:///android_asset/sample.html");
-
-        // OR, you can also load from an HTML string:
-
-//        String summary = "<html><body>You scored <b>192</b> points.</body></html>";
-
-//        mViewHolder.mainWebView.loadData(summary, "text/html", null);
-
-        // ... although note that there are restrictions on what this HTML can do.
-        // See the JavaDocs for loadData() and loadDataWithBaseURL() for more info.
-
-
     }
 
     public class myWebClient extends WebViewClient {
@@ -72,28 +57,37 @@ public class MenuActivity extends AppCompatActivity {
             super.onPageStarted(view, url, favicon);
         }
 
+
         @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
-        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-            String method = request.getMethod();
-            Uri url = request.getUrl();
-            Map<String, String> headers = request.getRequestHeaders();
-
+        public WebResourceResponse shouldInterceptRequest(final WebView view, WebResourceRequest request) {
+            final Uri url = request.getUrl();
             try {
-//                if (url.equals(new URL("http://someremoteurl.com/sample.json"))) {
-                WebResourceResponse wr = new WebResourceResponse("text/json", "UTF-8", getAssets().open("initial_data.json"));
+
+//                Proxy proxyTest = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getIPAddress(true), 12344));
+
+//                OkHttpClient.Builder builder = new OkHttpClient.Builder().proxy(proxyTest);
+//                OkHttpClient client = builder.build();
+
+                Response response = run(url.toString(), request);
+
+                WebResourceResponse wr =
+                        new WebResourceResponse("text/json", "UTF-8",
+                                response.body().byteStream());
+
+
+//                WebResourceResponse wr =
+//                        new WebResourceResponse("text/json", "UTF-8",
+//                                getAssets().open("initial_data.json"));
 
                 return wr;
-//                }
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            return null;
-
-//            return super.shouldInterceptRequest(view, request);
+            return super.shouldInterceptRequest(view, request);
         }
     }
 
@@ -109,8 +103,10 @@ public class MenuActivity extends AppCompatActivity {
         }
 
         private void setWebSettings() {
+            mainWebView.clearCache(true);
             WebSettings webSettings = mainWebView.getSettings();
             webSettings.setJavaScriptEnabled(true);
+            webSettings.setAllowUniversalAccessFromFileURLs(true);
         }
     }
 
@@ -141,4 +137,30 @@ public class MenuActivity extends AppCompatActivity {
         } // for now eat exceptions
         return "";
     }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public Response run(String url, WebResourceRequest webRequest) throws Exception {
+
+        Headers headers = Headers.of(webRequest.getRequestHeaders());
+
+        Request request = new Request.Builder()
+                .headers(headers)
+//                .url("https://gist.githubusercontent.com/Rio517/5c95cc6402da8c5e37bc579111e14350/raw/b8ac727658a2aae2a4338d1cb7b1e91aca6288db/z_output.json")
+                .url(url)
+                .build();
+
+        Response response = null;
+        try {
+            response = client
+                    .newCall(request)
+                    .execute();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+//        if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+
+        return response;
+
+    }
+
 }

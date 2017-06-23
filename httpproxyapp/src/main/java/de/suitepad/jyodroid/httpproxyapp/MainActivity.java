@@ -14,13 +14,5 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        HttpURLConnection conn = null;
-        try {
-            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("10.0.0.1", 12340));
-            conn = (HttpURLConnection) new URL("http://www.google.com").openConnection(proxy);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }
