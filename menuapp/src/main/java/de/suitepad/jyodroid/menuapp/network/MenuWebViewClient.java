@@ -9,6 +9,7 @@ import android.webkit.WebViewClient;
 
 import java.io.IOException;
 
+import de.suitepad.jyodroid.menuapp.BuildConfig;
 import de.suitepad.jyodroid.menuapp.menu.MenuView;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
@@ -28,6 +29,11 @@ public class MenuWebViewClient extends WebViewClient {
     private final OkHttpClient client = new OkHttpClient();
     private MenuView mView;
 
+    {
+        System.setProperty("http.proxyHost", "localhost");
+        System.setProperty("http.proxyPort", String.valueOf(BuildConfig.PROXY_PORT));
+    }
+
     public MenuWebViewClient(MenuView MenuView) {
         mView = MenuView;
     }
@@ -37,14 +43,16 @@ public class MenuWebViewClient extends WebViewClient {
         final Uri url = request.getUrl();
         try {
             Response response = redirect(url.toString(), request);
-            return new WebResourceResponse(MIME_TYPE, CODING, response.body().byteStream());
+            if (response != null && response.isSuccessful()) {
+                return new WebResourceResponse(MIME_TYPE, CODING, response.body().byteStream());
+            }
 
         } catch (IOException ioe) {
-            mView.showException(ioe);
             Log.e(LOG_TAG, "Problem returning response from proxy", ioe);
+            mView.showException(ioe);
         } catch (Exception e) {
-            mView.showException(e);
             Log.e(LOG_TAG, "Problem redirecting to proxy", e);
+            mView.showException(e);
         }
 
         return super.shouldInterceptRequest(view, request);
@@ -61,8 +69,8 @@ public class MenuWebViewClient extends WebViewClient {
         try {
             response = client.newCall(request).execute();
         } catch (IOException e) {
-            mView.showException(e);
             Log.e(LOG_TAG, "Problem calling to proxy", e);
+            mView.showException(e);
         }
 
         return response;

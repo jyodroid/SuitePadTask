@@ -5,7 +5,7 @@ android {
     buildToolsVersion project.buildToolsVersion
 
     defaultConfig {
-        applicationId "de.suitepad.jyodroid.menuapp"
+        applicationId "de.suitepad.jyodroid.httpproxyapp"
         minSdkVersion project.minSdkVersion.toInteger()
         targetSdkVersion project.targetSdkVersion.toInteger()
         versionCode 1

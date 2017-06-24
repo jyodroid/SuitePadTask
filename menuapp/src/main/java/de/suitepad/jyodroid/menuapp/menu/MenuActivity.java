@@ -1,5 +1,7 @@
 package de.suitepad.jyodroid.menuapp.menu;
 
+import android.content.ComponentName;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -9,7 +11,6 @@ import android.webkit.WebView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import de.suitepad.jyodroid.menuapp.BuildConfig;
 import de.suitepad.jyodroid.menuapp.R;
 import de.suitepad.jyodroid.menuapp.network.MenuWebViewClient;
 
@@ -17,7 +18,6 @@ public class MenuActivity extends AppCompatActivity implements MenuView {
 
     private ViewHolder mViewHolder;
     private static final String LOCAL_PAGE_PATH = "file:///android_asset/sample.html";
-    private MenuPresenter mPresenter;
 
     @BindView(R.id.menu_root_view)
     View mRootView;
@@ -27,22 +27,23 @@ public class MenuActivity extends AppCompatActivity implements MenuView {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_menu);
         ButterKnife.bind(this);
-
         mViewHolder = new ViewHolder(mRootView, this);
+        startProxyService();
+        mViewHolder.mainWebView.loadUrl(LOCAL_PAGE_PATH);
 
-        mPresenter = new MenuPresenter(this);
-        mPresenter.setProxyValues("172.23.2.183", BuildConfig.PROXY_PORT);
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        mViewHolder.mainWebView.loadUrl(LOCAL_PAGE_PATH);
+    public void startProxyService() {
+        Intent serviceIntent = new Intent();
+        serviceIntent.setComponent(new ComponentName(
+                "de.suitepad.jyodroid.httpproxyapp",
+                "de.suitepad.jyodroid.httpproxyapp.httpproxy.ProxyService"));
+        startService(serviceIntent);
     }
 
     @Override
     public void showException(Exception e) {
-        Snackbar.make(mRootView, "Something went wrong: " + e.getMessage(), Snackbar.LENGTH_LONG)
+        Snackbar.make(mRootView, "Something went wrong: " + e.getCause(), Snackbar.LENGTH_LONG)
                 .show();
     }
 

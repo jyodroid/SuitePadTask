@@ -1,15 +1,22 @@
 package de.suitepad.jyodroid.httpproxyapp.httpproxy;
 
+import android.content.ContentResolver;
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
 import android.util.Log;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.StringTokenizer;
@@ -23,146 +30,180 @@ final class ProxyServer {
     private static final int BUFFER_SIZE = 4 * 1024;
     private static final String LOG_TAG = ProxyServer.class.getSimpleName();
 
-    private Socket socket;
+    private Socket mSocket;
+    private Context mContext;
 
-    private String sourceUrl = "https://gist.githubusercontent.com/Rio517/5c95cc6402da8c5e37bc579111e14350/raw/b8ac727658a2aae2a4338d1cb7b1e91aca6288db/z_output.json";
-
-    ProxyServer(Socket socket) {
-        this.socket = socket;
+    ProxyServer(Socket socket, Context context) {
+        this.mSocket = socket;
+        this.mContext = context;
     }
 
-    public void serve() {
+    void serve() {
+
         DataOutputStream response = null;
-        BufferedReader in = null;
+        BufferedReader income = null;
+
         try {
             response =
-                    new DataOutputStream(socket.getOutputStream());
-            in = new BufferedReader(
-                    new InputStreamReader(socket.getInputStream()));
+                    new DataOutputStream(mSocket.getOutputStream());
+            income = new BufferedReader(
+                    new InputStreamReader(mSocket.getInputStream()));
 
-            String clientUrl = getClientRequestURL(in);
-            if (clientUrl != null) {
-                File cachedJson = findCachedJSON(clientUrl);
-                InputStream is = null;
+            String originalUrl = getOriginalUrl(income);
+            String searchedFileName = getSerchedFileName(originalUrl);
+            String searchedFileContent = getCacheSearchedFile(mContext, searchedFileName);
 
-                try {
-                    if (cachedJson != null) {
-                        File testFile = new File("/Users/johntangarife/Documents/StudioProjects/SuitePadTask/datasourceapp/src/main/assets/sample.json");
-                        is = new FileInputStream(testFile);
-
-                        response.writeBytes("HTTP/1.1 200 OK\n");
-                        response.writeBytes("Content-Type: text/json\n");
-                        response.writeBytes("Content-Length: " + testFile.length() + "\n\n");
-
-                    } else {
-                        redirectConnectionToServer(clientUrl, is);
-                        byte by[] = new byte[BUFFER_SIZE];
-                        int index = is.read(by, 0, BUFFER_SIZE);
-
-                        while (index != -1) {
-                            response.write(by, 0, index);
-                            index = is.read(by, 0, BUFFER_SIZE);
-                        }
-                        response.flush();
-                    }
-
-                    sendResponseToClient(response, is);
-
-                } catch (Exception e) {
-                    System.err.println("Encountered exception: " + e);
-                    e.printStackTrace();
-                    response.writeBytes("");
-                }
+            if (!searchedFileContent.isEmpty()) {
+                responseWithCachedData(response, searchedFileContent);
+            } else {
+                responseWithOriginalRequest(response, originalUrl);
             }
-
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(LOG_TAG, "Error in server", e);
+        } catch (JSONException e) {
+            Log.e(LOG_TAG, "Error in server", e);
+        } catch (URISyntaxException e) {
+            Log.e(LOG_TAG, "Error in server", e);
         } finally {
-            //close response all resources
             try {
                 if (response != null) {
                     response.close();
                 }
-                if (in != null) {
-                    in.close();
+                if (income != null) {
+                    income.close();
                 }
             } catch (IOException e) {
-                Log.e(LOG_TAG, "Error closing resources", e);
+                e.printStackTrace();
             }
         }
     }
 
     /**
-     * Return response to client request
+     * Make the original request
      *
-     * @param response from original request
-     * @param is       Stream with response body
+     * @param response    to send to client
+     * @param originalUrl from original request
+     * @throws IOException
      */
-    private void sendResponseToClient(DataOutputStream response, InputStream is) throws IOException {
-        byte by[] = new byte[BUFFER_SIZE];
-        int index = is.read(by, 0, BUFFER_SIZE);
+    private void responseWithOriginalRequest(DataOutputStream response, String originalUrl) throws
+            IOException {
+        BufferedReader bufferedReader = null;
+        try {
+            URL url = new URL(originalUrl);
+            URLConnection urlConnection = url.openConnection();
 
-        while (index != -1) {
-            response.write(by, 0, index);
-            index = is.read(by, 0, BUFFER_SIZE);
+            urlConnection.setDoInput(true);
+            urlConnection.setDoOutput(false);
+
+            InputStream callIncome = null;
+
+            try {
+                if (urlConnection.getContentLength() > 0) {
+                    callIncome = urlConnection.getInputStream();
+                    bufferedReader = new BufferedReader(new InputStreamReader(callIncome));
+                }
+            } catch (IOException ioe) {
+                Log.e(LOG_TAG, "Connection error", ioe);
+            }
+            byte by[] = new byte[BUFFER_SIZE];
+            int index = callIncome.read(by, 0, BUFFER_SIZE);
+
+            while (index != -1) {
+                response.write(by, 0, index);
+                index = callIncome.read(by, 0, BUFFER_SIZE);
+            }
+            response.flush();
+
+        } catch (Exception e) {
+            Log.e(LOG_TAG, "Encountered exception: " + e);
+            //encountered error - just send nothing back, soprocessing can continue
+            response.writeBytes("");
+            response.flush();
+        } finally {
+            if (bufferedReader != null) {
+                bufferedReader.close();
+            }
         }
+    }
+
+    /**
+     * respond with cached data to client
+     *
+     * @param response            to send to client
+     * @param searchedFileContent data to send to client
+     * @throws IOException
+     */
+    private void responseWithCachedData(DataOutputStream response, String searchedFileContent)
+            throws IOException {
+
+        response.writeBytes("HTTP/1.1 200 OK\n");
+        response.writeBytes("Content-Type: text/json\n");
+        response.writeBytes("Content-Length: " +
+                searchedFileContent.getBytes().length + "\n\n");
+        response.writeBytes(searchedFileContent);
+        response.writeBytes("\n\n");
         response.flush();
     }
 
     /**
-     * Make petition to original destination
+     * Find the cached file and return content
      *
-     * @param clientUrl original request url
-     * @return Buffered reader with response
-     * @throws IOException
+     * @param context          from service
+     * @param searchedFileName name of file to find on cache
+     * @return content of the searched file
+     * @throws JSONException
      */
-    private void redirectConnectionToServer(String clientUrl, InputStream inputStream)
-            throws IOException {
-        URL url = new URL(clientUrl);
-        URLConnection conn = url.openConnection();
-        conn.setDoInput(true);
-        conn.setDoOutput(false);
-        BufferedReader br = null;
+    private String getCacheSearchedFile(Context context, String searchedFileName) throws JSONException {
+        String[] projection = new String[]{
+                "content"
+        };
 
-        if (conn.getContentLength() > 0) {
-            try {
-                inputStream = conn.getInputStream();
-                br = new BufferedReader(new InputStreamReader(inputStream));
-            } finally {
-                if (br != null) {
-                    br.close();
-                }
-            }
+        Uri uri = Uri.parse("content://de.suitepad.jyodroid.datasourceapp/cached_file");
+
+        ContentResolver cr = context.getContentResolver();
+        Cursor cursor =
+                cr.query(Uri.withAppendedPath(uri, searchedFileName), projection, null, null, null);
+
+        if (cursor != null && cursor.getCount() != 0) {
+            cursor.moveToFirst();
+            JSONArray object = new JSONArray(cursor.getString(0));
+            cursor.close();
+            return object.toString();
         }
-    }
 
-    private File findCachedJSON(String url) {
-        return null;
+        return "";
     }
 
     /**
-     * Get request url from client
+     * Obtain from url name of the searched file
      *
-     * @param in socket input stream
-     * @return original String url
+     * @param originalUrl from original request
+     * @return name of the searched file
+     * @throws URISyntaxException
+     */
+    private String getSerchedFileName(String originalUrl) throws URISyntaxException {
+        String[] segments = new URI(originalUrl).getPath().split("/");
+        return segments[segments.length - 1];
+    }
+
+    /**
+     * Obtain the url from the original request
+     *
+     * @param income buffer of original request
+     * @return
      * @throws IOException
      */
-    private String getClientRequestURL(BufferedReader in) throws IOException {
-        int counter = 0;
-        String inputLine;
-        String requestUrl = null;
-        while ((inputLine = in.readLine()) != null) {
+    private String getOriginalUrl(BufferedReader income) throws IOException {
+
+        String inputLine = income.readLine();
+        if (inputLine != null) {
             StringTokenizer tok = new StringTokenizer(inputLine);
             tok.nextToken();
 
-            //parse the first line of the request to find the url
-            if (counter == 0) {
-                String[] tokens = inputLine.split(" ");
-                requestUrl = tokens[1];
-                Log.d(LOG_TAG, "Call from: " + requestUrl);
-            }
-            counter++;
+            String[] tokens = inputLine.split(" ");
+            return tokens[1];
         }
-        return requestUrl;
+
+        return "";
     }
 }

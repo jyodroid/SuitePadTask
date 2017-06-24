@@ -18,7 +18,7 @@ import de.suitepad.jyodroid.datasourceapp.data.DataSourceContract.MenuItemEntry;
 public final class DataSourceContentProvider extends ContentProvider {
 
     private static final int ALL_ITEMS = 100;
-    private static final int ITEM_BY_ID = 101;
+    private static final int ITEM_BY_NAME = 101;
 
     private DataSourceDBHelper mDbHelper;
     private static final UriMatcher sUriMatcher = buildUriMatcher();
@@ -50,8 +50,8 @@ public final class DataSourceContentProvider extends ContentProvider {
                         null,
                         sortOrder
                 );
-            case ITEM_BY_ID:
-                return getItemById(uri, projection, sortOrder);
+            case ITEM_BY_NAME:
+                return getItemByFileName(uri, projection, sortOrder);
 
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
@@ -65,7 +65,7 @@ public final class DataSourceContentProvider extends ContentProvider {
         final int match = sUriMatcher.match(uri);
 
         switch (match) {
-            case ITEM_BY_ID:
+            case ITEM_BY_NAME:
                 return MenuItemEntry.CONTENT_TYPE;
             case ALL_ITEMS:
                 return MenuItemEntry.CONTENT_TYPE;
@@ -103,7 +103,7 @@ public final class DataSourceContentProvider extends ContentProvider {
 
         // For each type of URI you want to add, create a corresponding code.
         matcher.addURI(authority, DataSourceContract.PATH_MENU_ITEM, ALL_ITEMS);
-        matcher.addURI(authority, DataSourceContract.PATH_MENU_ITEM + "/*", ITEM_BY_ID);
+        matcher.addURI(authority, DataSourceContract.PATH_MENU_ITEM + "/*", ITEM_BY_NAME);
         return matcher;
     }
 
@@ -113,13 +113,13 @@ public final class DataSourceContentProvider extends ContentProvider {
      * @param sortOrder  order in the elements in table to be returned on {@link Cursor}
      * @return query result
      */
-    private Cursor getItemById(Uri uri, String[] projection, String sortOrder) {
+    private Cursor getItemByFileName(Uri uri, String[] projection, String sortOrder) {
 
         String id = DataSourceContract.getMenuItemIdFromUri(uri);
 
         sQueryBuilder.setTables(MenuItemEntry.TABLE_NAME);
 
-        String selection = MenuItemEntry.TABLE_NAME + "." + MenuItemEntry.COLUMN_ID + " = ?";
+        String selection = MenuItemEntry.TABLE_NAME + "." + MenuItemEntry.COLUMN_FILE_NAME + " = ?";
 
         String[] selectionArgs = new String[]{id};
 

@@ -5,21 +5,16 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 
 import de.suitepad.jyodroid.datasourceapp.data.DataSourceContract.MenuItemEntry;
-import de.suitepad.jyodroid.datasourceapp.model.MenuItem;
 
 /**
  * Created by johntangarife on 6/20/17.
  */
 
-public final class DataSourceDBHelper extends SQLiteOpenHelper {
+final class DataSourceDBHelper extends SQLiteOpenHelper {
 
     private static final int DATABASE_VERSION = 1;
     private static final String DATABASE_NAME = "DataSourceApp.db";
@@ -28,7 +23,7 @@ public final class DataSourceDBHelper extends SQLiteOpenHelper {
 
     private Context mContext;
 
-    public DataSourceDBHelper(Context context) {
+    DataSourceDBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
         mContext = context;
     }
@@ -38,10 +33,8 @@ public final class DataSourceDBHelper extends SQLiteOpenHelper {
 
         final String SQL_CREATE_MENU_ITEMS_TABLE = "CREATE TABLE " + MenuItemEntry.TABLE_NAME +
                 " (" +
-                MenuItemEntry.COLUMN_ID + " TEXT PRIMARY KEY, " +
-                MenuItemEntry.COLUMN_NAME + " TEXT NOT NULL, " +
-                MenuItemEntry.COLUMN_PRICE + " REAL NOT NULL, " +
-                MenuItemEntry.COLUMN_TYPE + " TEXT NOT NULL" +
+                MenuItemEntry.COLUMN_FILE_NAME + " TEXT PRIMARY KEY, " +
+                MenuItemEntry.COLUMN_CONTENT + " TEXT NOT NULL" +
                 " );";
 
         //Execute
@@ -71,19 +64,12 @@ public final class DataSourceDBHelper extends SQLiteOpenHelper {
 
     private void insertDefaultValues(String tableName, String jsonName,
                                      Context mContext, SQLiteDatabase db) {
-        List<MenuItem> defaultItems = getItemsFromJSON(jsonName, mContext);
 
-        final String SQL_INSERT_MENU_ITEMS_FORMAT =
-                "INSERT INTO " + tableName + " VALUES ( \"%1$s\", \"%2$s\", %3$f, \"%4$s\")";
+        final String SQL_INSERT_JSON =
+                "INSERT INTO " + tableName +
+                        " VALUES ( \"" + jsonName + "\",\'" + getJSON(jsonName, mContext) + "\')";
 
-        if (defaultItems != null) for (MenuItem item : defaultItems) {
-
-            String insertQuery =
-                    String.format(SQL_INSERT_MENU_ITEMS_FORMAT, item.getId(),
-                            item.getName(), item.getPrice(), item.getType());
-
-            db.execSQL(insertQuery);
-        }
+        db.execSQL(SQL_INSERT_JSON);
     }
 
     /**
@@ -93,7 +79,7 @@ public final class DataSourceDBHelper extends SQLiteOpenHelper {
      * @param context  context of application
      * @return List with menu items
      */
-    private List<MenuItem> getItemsFromJSON(String fileName, Context context) {
+    private String getJSON(String fileName, Context context) {
 
         final String JSON_FORMAT = "UTF-8";
 
@@ -104,13 +90,7 @@ public final class DataSourceDBHelper extends SQLiteOpenHelper {
             inputStream.read(buffer);
             inputStream.close();
 
-            String json = new String(buffer, JSON_FORMAT);
-
-            Gson gson = new Gson();
-            return gson.fromJson(json, new TypeToken<List<MenuItem>>() {
-            }.getType());
-
-
+            return new String(buffer, JSON_FORMAT);
         } catch (IOException e) {
             Log.e(LOG_TAG, "Error parsing JSON ", e);
             return null;
